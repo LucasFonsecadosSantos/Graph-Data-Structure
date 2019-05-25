@@ -1,0 +1,17 @@
+GRAPH Graph01 {
+    b : c;
+    c : d;
+}
+
+GRAPH Graph02 VALUED {
+    b : c w[2];
+}
+
+GRAPH Graph03 DESCRIBED {
+    b : c d[highway 01];
+}
+
+DIGRAPH Graph04 {
+    b : c;
+    c : b;
+}
