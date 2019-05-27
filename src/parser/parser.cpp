@@ -1,5 +1,8 @@
 #include "../../include/graph_data_structure/parser/parser.hpp"
 #include "../../include/graph_data_structure/parser/token.hpp"
+#include "../../include/graph_data_structure/exception/delimiter_expected.hpp"
+#include "../../include/graph_data_structure/exception/name_identifier_expected.hpp"
+#include "../../include/graph_data_structure/exception/type_identifier_expected.hpp"
 
 #include <cstddef>
 #include <string>
@@ -71,15 +74,22 @@ std::vector<std::string>* Parser::getGraph(std::string description) {
     bool nameGraphFLAG = false;
     bool attrGraphFLAG = false;
     bool typeGraphFLAG = false;
+    unsigned row = 0;
+    unsigned column = 0;
     
     for (unsigned i = 0; i < limit; ++i) {
         tmpChar = description.at(i);
+        ++column;
         if (tmpChar == '{') {
             if (typeGraphFLAG && nameGraphFLAG) {
                 openGraphFLAG = true;
                 tmpStr += tmpChar;
             } else {
-                //EXECAO: ESTA FALTANDO O TIPO E O NOME
+                if (!typeGraphFLAG) {
+                    throw TypeIdentifierExpected(row,column);
+                } else {
+                    throw NameIdentifierExpected(row,column);
+                }
             }
         } else if (tmpChar == '}') {
             if (openGraphFLAG) {
@@ -105,6 +115,10 @@ std::vector<std::string>* Parser::getGraph(std::string description) {
             }
         } else {
             tmpStr += tmpChar;
+            if (tmpChar == '\0') {
+                ++row;
+                column = 0;
+            }
         }
     }
     return graphs;
