@@ -6,6 +6,7 @@ int main() {
         "GRAPH Graph01 { b : c; c : d; } GRAPH Graph02 VALUED { b : c w[2];}"
     );
     std::vector<std::string> *v = p->getGraph("GRAPH Graph01 { b : c; c : d; } GRAPH Graph02 VALUED { b : c w[2];}");
+    std::cout << p->getGraphType()->getValue();
     
     return 0;
 }

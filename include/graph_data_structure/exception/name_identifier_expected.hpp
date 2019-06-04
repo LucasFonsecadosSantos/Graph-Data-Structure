@@ -15,7 +15,8 @@ class NameIdentifierExpected : public std::exception {
     private:
         unsigned column;
         unsigned row;
-        const char* m_error = "INPUT FILE: " + std::to_string(row) + ":" + std::to_string(column) + "A name identifier expected at file syntax.";
+        //const char* m_error = "INPUT FILE: " + std::to_string(row) + ":" + std::to_string(column) + "A name identifier expected at file syntax.";
+        const char* m_error = "INPUT FILE: A name identifier expected at file syntax.";
 };
 
 #endif

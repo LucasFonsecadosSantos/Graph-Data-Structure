@@ -52,7 +52,29 @@ void Parser::setGraph(std::string graph) {
 }
 
 Token* Parser::getGraphType() {
+    unsigned size = this->graph.size();
+    char tmpChar;
+    std::string tmpString = "";
+    bool typeFlag = false;
+    bool wordOccurrencyFlag = false;
+    unsigned row = 0;
+    unsigned column = 0;
     
+    for (unsigned i = 0; i < size; ++i) {
+        tmpChar = this->graph.at(i);
+        ++column;
+        if ((tmpChar == ' ') && (tmpString == "")) {
+            continue;
+        } else if (tmpChar != ' '){
+            tmpString += tmpChar;
+        } else if ((tmpChar == ' ') && (tmpString != "")) {
+            if (isGraphTypeIdentifier(tmpString)) {
+                return new Token(Graph::TOKEN_TAG::_GRAPH_TYPE_,tmpString);
+            } else {
+                //Throw a exception: Graph type identifier expected;
+            }
+        }
+    }
 }
 
 Token* Parser::getGraphName() {

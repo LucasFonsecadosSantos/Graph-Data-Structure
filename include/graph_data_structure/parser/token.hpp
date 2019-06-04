@@ -10,7 +10,7 @@ class Token {
         Token(Graph::TOKEN_TAG tag, std::string value);
         ~Token();
         inline void setValue(std::string value);
-        inline std::string getValue();
+        std::string getValue();
         inline void setTag(Graph::TOKEN_TAG tag);
         inline Graph::TOKEN_TAG getTag();
 

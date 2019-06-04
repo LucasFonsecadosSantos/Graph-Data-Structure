@@ -15,7 +15,7 @@ inline void Token::setValue(std::string value) {
     this->value = value;
 }
 
-inline std::string Token::getValue() {
+std::string Token::getValue() {
     return this->value;
 }
 
