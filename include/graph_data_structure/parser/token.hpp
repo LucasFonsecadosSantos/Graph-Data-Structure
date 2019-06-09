@@ -7,16 +7,17 @@
 class Token {
 
     public:
-        Token(Graph::TOKEN_TAG tag, std::string value);
+        Token(Graph::TOKEN_TAG tag, std::string *value);
+        Token(Graph::TOKEN_TAG tag);
         ~Token();
-        inline void setValue(std::string value);
-        std::string getValue();
+        inline void setValue(std::string *value);
+        std::string* getValue();
         inline void setTag(Graph::TOKEN_TAG tag);
-        inline Graph::TOKEN_TAG getTag();
+        Graph::TOKEN_TAG getTag();
 
     private:
         Graph::TOKEN_TAG tag;
-        std::string value;
+        std::string *value;
 };
 
 #endif

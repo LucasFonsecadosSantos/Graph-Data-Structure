@@ -54,31 +54,128 @@ void Parser::setGraph(std::string graph) {
 Token* Parser::getGraphType() {
     unsigned size = this->graph.size();
     char tmpChar;
-    std::string tmpString = "";
-    bool typeFlag = false;
-    bool wordOccurrencyFlag = false;
+    std::string *tmpString = new std::string("");
     unsigned row = 0;
     unsigned column = 0;
     
     for (unsigned i = 0; i < size; ++i) {
         tmpChar = this->graph.at(i);
         ++column;
-        if ((tmpChar == ' ') && (tmpString == "")) {
+        if ((tmpChar == ' ') && (*tmpString == ""))
             continue;
-        } else if (tmpChar != ' '){
-            tmpString += tmpChar;
-        } else if ((tmpChar == ' ') && (tmpString != "")) {
-            if (isGraphTypeIdentifier(tmpString)) {
+        else if (tmpChar != ' ')
+            *tmpString += tmpChar;
+        else if ((tmpChar == ' ') && (*tmpString != ""))
+            if (isGraphTypeIdentifier(tmpString))
                 return new Token(Graph::TOKEN_TAG::_GRAPH_TYPE_,tmpString);
+            //ELSE Throw a exception: Graph type identifier expected;
+    }
+}
+
+Token* Parser::getGraphName() {
+    unsigned size = this->graph.size();
+    ANALYZE_LOCATION update = getAnalyzeLocation();
+    FLAG flag = getFlags(); 
+    char tmpChar;
+    std::string *tmpString = new std::string("");
+    unsigned row = 0;
+    unsigned column = 0;
+    
+    for (unsigned i = 0; i < size; ++i) {
+        tmpChar = this->graph.at(i);
+        ++column;
+        if ((tmpChar == ' ') && (*tmpString == "")) {
+            continue;
+        } else if ((tmpChar == ' ') && (*tmpString != "")) {
+            if (isGraphTypeIdentifier(tmpString) && !flag.graphType) {
+                flag.graphType = true;
+                *tmpString = "";
+            } else if (!isGraphDelimiterIdentifier(tmpString) && !isGraphATTRIdentifier(tmpString) && flag.graphType) {
+                return new Token(Graph::TOKEN_TAG::_GRAPH_NAME_, tmpString);
             } else {
-                //Throw a exception: Graph type identifier expected;
+                //Thrown expcetion: Graph name token expected;
             }
         }
     }
 }
 
-Token* Parser::getGraphName() {
+std::vector<Token*>* Parser::analyze() {
+    std::cout << "teste";
+    ANALYZE_LOCATION update = getAnalyzeLocation();
+    FLAG flag = getFlags();
+    Token *tmpEdgeToken = new Token(Graph::TOKEN_TAG::_EDGE_, new std::string[2]()); 
+    unsigned size = this->graph.size();
+    char tmpChar;
+    std::string *tmpStr = new std::string("");
+    std::vector<Token*> *tokens = new std::vector<Token*>();
 
+    
+    for (unsigned i = 0; i < size; ++i) {
+        tmpChar = this->graph.at(i);
+        update.column++;
+        if (tmpChar == ' ' && *tmpStr == "") {
+            continue;
+        } else if (flag.vertexAnalyzing && flag.openDelimiter) {
+            if (tmpChar != ':') {
+                *tmpStr += tmpChar;
+            } else if (!flag.edgeAnalyzing) {
+                tmpEdgeToken->getValue()[0] = *tmpStr;
+                flag.edgeAnalyzing = true;
+                *tmpStr = "";
+            } else {
+                tmpEdgeToken->getValue()[1] = *tmpStr;
+                flag.edgeAnalyzing = flag.vertexAnalyzing = false;
+                tokens->push_back(tmpEdgeToken);
+                *tmpStr = "";
+            }
+        } else if (tmpChar == ' ' && *tmpStr != "") {
+            std::cout << tmpChar;
+            if (!flag.graphType) {
+                if (isGraphTypeIdentifier(tmpStr)) {
+                    flag.graphType = true;
+                    tokens->push_back(new Token(Graph::TOKEN_TAG::_GRAPH_TYPE_,tmpStr));
+                    *tmpStr = "";
+                } else {
+                    //exception: faltou o token tipo do grafo
+                }
+            } else if (flag.graphType && !flag.graphName) {
+                if (isGraphATTRIdentifier(tmpStr)) {
+                    //exception: faltou nome do grafo
+                } else {
+                    flag.graphName = true;
+                    tokens->push_back(new Token(Graph::TOKEN_TAG::_GRAPH_NAME_,tmpStr));
+                    *tmpStr = "";
+                }
+            } else if (flag.graphName && flag.graphType && !flag.graphAttr){
+                if (isGraphATTRIdentifier(tmpStr)) {
+                    flag.graphAttr = true;
+                    tokens->push_back(new Token(Graph::TOKEN_TAG::_ATTR_,tmpStr));
+                    *tmpStr = "";
+                } else {
+                    //exeception: UNKnow attr
+                }
+            }
+        } else if (tmpChar == '{') {
+            std::cout << tmpChar;
+            if (!flag.graphName || !flag.graphType) {
+                //exception: name token or type token expected
+            } else {
+                flag.vertexAnalyzing = flag.openDelimiter = true;
+                *tmpStr = "";
+            }
+        } else if (tmpChar == '}') {
+            if (flag.openDelimiter) {
+                flag.closeDelimiter = true;
+                //deu certo, pode encerrar a analize do grafo
+            } else {
+                //lancar execao, nao abriu o grafo
+            }
+        } else {
+            std::cout << tmpChar;
+            *tmpStr += tmpChar;
+        }
+    }
+    return tokens;
 }
 
 Token* Parser::getGraphAttr() {
@@ -88,14 +185,11 @@ Token* Parser::getGraphAttr() {
 std::vector<std::string>* Parser::getGraph(std::string description) {
     unsigned limit = description.size();
     char tmpChar;
-    std::string tmpStr;
+    std::string *tmpStr;
     std::string graphStr;
     std::vector<std::string> *graphs = new std::vector<std::string>();
-    bool openGraphFLAG = false;
-    bool closeGraphFLAG = false;
-    bool nameGraphFLAG = false;
-    bool attrGraphFLAG = false;
-    bool typeGraphFLAG = false;
+    FLAG flag = getFlags();
+    
     unsigned row = 0;
     unsigned column = 0;
     
@@ -103,53 +197,81 @@ std::vector<std::string>* Parser::getGraph(std::string description) {
         tmpChar = description.at(i);
         ++column;
         if (tmpChar == '{') {
-            if (typeGraphFLAG && nameGraphFLAG) {
-                openGraphFLAG = true;
-                tmpStr += tmpChar;
-            } else {
-                if (!typeGraphFLAG) {
+            if (flag.graphType && flag.graphName) {
+                flag.openDelimiter = true;
+                *tmpStr += tmpChar;
+                if (!flag.graphType) {
                     throw TypeIdentifierExpected(row,column);
                 } else {
                     throw NameIdentifierExpected(row,column);
                 }
             }
         } else if (tmpChar == '}') {
-            if (openGraphFLAG) {
-                tmpStr += tmpChar;
-                graphStr += tmpStr;
+            if (flag.openDelimiter) {
+                *tmpStr += tmpChar;
+                graphStr += *tmpStr;
                 graphs->push_back(graphStr);
                 graphStr = "";
-                tmpStr = "";
+                *tmpStr = "";
             } else {
                 //EXECAO: NAO ABRIU O OBJ GRAFO
             }
         } else if (tmpChar == ' ') {
-            if (tmpStr == "") {
+            if (*tmpStr == "") {
                 continue;
             } else {
                 if (isGraphTypeIdentifier(tmpStr)) {
-                    typeGraphFLAG = true;
+                    flag.graphType = true;
                 } else {
-                    nameGraphFLAG = true;
+                    flag.graphName = true;
                 }
-                graphStr += ' ' + tmpStr;
-                tmpStr = "";
+                graphStr += ' ' + *tmpStr;
+                *tmpStr = "";
             }
         } else {
-            tmpStr += tmpChar;
+            }
+            *tmpStr += tmpChar;
             if (tmpChar == '\0') {
                 ++row;
                 column = 0;
             }
         }
-    }
     return graphs;
 }
 
-bool Parser::isGraphTypeIdentifier(std::string identifier) {
+bool Parser::isGraphTypeIdentifier(std::string *identifier) {
     unsigned short size = this->graphTypeIdentifiers->size();
-    for (unsigned i = 0 ; i < size ; ++i)
-        if (identifier == this->graphTypeIdentifiers[i])
+    for (unsigned short i = 0 ; i < size ; ++i)
+        if (*identifier == this->graphTypeIdentifiers[i])
             return true;
     return false;
+}
+
+bool Parser::isGraphATTRIdentifier(std::string *identifier) {
+    unsigned short size = this->graphATTRIdentifiers->size();
+    for (unsigned short i = 0; i < size; ++i)
+        if (*identifier == this->graphATTRIdentifiers[i])
+            return true;
+    return false;
+}
+
+
+bool Parser::isGraphDelimiterIdentifier(std::string *identifier) {
+    unsigned short size = sizeof(this->delimiters);
+    for (unsigned short i = 0; i < size; ++i)
+        if (identifier->at(0) == this->delimiters[i])
+            return true;
+    return false;
+}
+
+Parser::ANALYZE_LOCATION Parser::getAnalyzeLocation() {
+    return {0,0};
+}
+
+Parser::FLAG Parser::getFlags() {
+    return {false, false, 
+            false, false, 
+            false, false, 
+            false
+    };
 }

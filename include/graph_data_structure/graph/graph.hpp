@@ -10,8 +10,9 @@ class Graph {
         enum TOKEN_TAG {
             _VERTEX_,
             _EDGE_,
+            _ATTR_,
             _GRAPH_TYPE_,
-            _ATTR_
+            _GRAPH_NAME_
         };
         enum GRAPH_TYPE {
             _GRAPH_,
